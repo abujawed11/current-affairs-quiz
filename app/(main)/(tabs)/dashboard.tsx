@@ -125,14 +125,11 @@
 // }
 
 
-import * as AuthApi from "@/src/api/auth";
-import { fetchTests } from "@/src/api/quiz";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../../_layout.theme";
-
-type AttemptSummary = Awaited<ReturnType<typeof AuthApi.myAttempts>>[number];
+import { useMyAttempts, useInProgress, useTests } from "@/src/hooks/useQueries";
 
 function pct(n: number) {
   if (Number.isNaN(n)) return 0;
@@ -140,27 +137,11 @@ function pct(n: number) {
 }
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
-  const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
-  const [testsAvailable, setTestsAvailable] = useState<number>(0);
-  const [progress, setProgress] = useState<AuthApi.InProgress>(null); // 👈 in-progress attempt
+  const { data: attempts = [], isLoading: attemptsLoading } = useMyAttempts();
+  const { data: progress = null, isLoading: progressLoading } = useInProgress();
+  const { data: tests = [], isLoading: testsLoading } = useTests();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [a, t, p] = await Promise.all([
-          AuthApi.myAttempts(),
-          fetchTests(),
-          AuthApi.inProgress(), // 👈 fetch in-progress
-        ]);
-        setAttempts(a);
-        setTestsAvailable(t.length);
-        setProgress(p);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const loading = attemptsLoading || progressLoading || testsLoading;
 
   const stats = useMemo(() => {
     const totalAttempts = attempts.length;
@@ -176,6 +157,8 @@ export default function Dashboard() {
       recent,
     };
   }, [attempts]);
+
+  const testsAvailable = tests.length;
 
   if (loading) return <ActivityIndicator style={{ marginTop: 32 }} />;
 

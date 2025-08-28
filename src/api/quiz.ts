@@ -79,8 +79,11 @@ export async function fetchTestDetail(testId: string): Promise<TestDetail> {
   return data;
 }
 
-export async function startAttempt(testId: string): Promise<{ attemptId: string; testId: string; questions: Question[] }> {
-  const { data } = await api.post("/attempts", { testId });
+export async function startAttempt(
+  testId: string, 
+  forceNew = false
+): Promise<{ attemptId: string; testId: string; questions: Question[] }> {
+  const { data } = await api.post("/attempts", { testId, forceNew });
   return data;
 }
 
@@ -94,11 +97,12 @@ export async function submitAttempt(
   timeTakenSec: number
 ): Promise<{ attemptId: string; score: number; total: number; accuracy_pct: number }> {
   const { data } = await api.post(`/attempts/${attemptId}/submit`, { time_taken_sec: timeTakenSec });
-  return data;
+  return { ...data, attemptId }; // Ensure attemptId is included
 }
 
 export async function reviewAttempt(attemptId: string): Promise<{
   attemptId: string;
+  testId: string;
   score: number;
   total: number;
   accuracy_pct: number;
@@ -125,4 +129,18 @@ export async function getAttempt(
 }> {
   const { data } = await api.get(`/attempts/${attemptId}`);
   return data;
+}
+
+// Use existing /me/attempts endpoint and filter by testId
+export async function getTestAttempts(testId: string): Promise<Array<{
+  attemptId: string;
+  score: number;
+  total: number;
+  accuracy_pct: number;
+  submitted_at: string;
+  time_taken_sec?: number; // Make optional since backend might not have it
+}>> {
+  const { data } = await api.get("/me/attempts");
+  // Filter attempts for specific test
+  return data.filter((attempt: any) => attempt.testId === testId);
 }

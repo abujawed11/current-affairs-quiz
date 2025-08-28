@@ -172,7 +172,6 @@
 
 
 
-import { answerQuestion, getAttempt, submitAttempt } from "@/src/api/quiz";
 import QuestionCard from "@/src/components/QuestionCard";
 import { formatMMSS } from "@/src/utils/time";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
@@ -180,6 +179,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, Alert, BackHandler, Text, TouchableOpacity, View } from "react-native";
 import { useToast } from "react-native-toast-notifications";
 import { colors } from "../../_layout.theme";
+import { useAttempt, useSubmitAttempt, useAnswerQuestion } from "@/src/hooks/useQueries";
 
 type AttemptState = {
   questions: { questionId: string; stem: string; options: { optionId: string; text: string }[] }[];
@@ -193,31 +193,56 @@ export default function AttemptRunner() {
   const navigation = useNavigation();
   const toast = useToast();
 
-  const [state, setState] = useState<AttemptState | null>(null);
   const [index, setIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [selected, setSelected] = useState<Record<string, string | null>>({});
 
   const timerRef = useRef<number | null>(null);
+
+  // Reset index when attemptId changes (component remounts or new attempt)
+  useEffect(() => {
+    console.log(`🎯 AttemptRunner mounted with attemptId: ${attemptId}`);
+    setIndex(0); // Always start from first question
+    setSelected({}); // Clear previous selections
+  }, [attemptId]);
+
+  // React Query hooks - force refetch for fresh attempts
+  const { data: attemptData, isLoading, refetch } = useAttempt(attemptId!);
+  const submitMutation = useSubmitAttempt();
+  const answerMutation = useAnswerQuestion();
+
+  // Force refetch when attemptId changes (new attempt created)
+  useEffect(() => {
+    if (attemptId) {
+      refetch();
+    }
+  }, [attemptId, refetch]);
 
   // ---- Submit (memoized) ----
   const onSubmit = useCallback(
     async (auto = false, overrideSpent?: number) => {
-      try {
-        setSubmitting(true);
-        const spent = overrideSpent ?? (state ? state.durationSec - secondsLeft : 0);
-        const res = await submitAttempt(attemptId!, spent > 0 ? spent : 0);
-        if (auto) toast.show("Time up! Auto-submitted.", { type: "warning" });
-        else toast.show("Submitted!", { type: "success" });
-        router.replace({ pathname: "../attempt/[attemptId]/review", params: { attemptId: res.attemptId } });
-      } catch {
-        toast.show("Submit failed", { type: "danger" });
-      } finally {
-        setSubmitting(false);
-      }
+      if (!attemptData) return;
+      
+      const spent = overrideSpent ?? (attemptData.duration_sec - secondsLeft);
+      
+      submitMutation.mutate(
+        { attemptId: attemptId!, timeTakenSec: spent > 0 ? spent : 0 },
+        {
+          onSuccess: (res) => {
+            if (auto) toast.show("Time up! Auto-submitted.", { type: "warning" });
+            else toast.show("Submitted!", { type: "success" });
+            router.replace({ 
+              pathname: "../attempt/[attemptId]/review", 
+              params: { attemptId: res.attemptId } 
+            });
+          },
+          onError: () => {
+            toast.show("Submit failed", { type: "danger" });
+          },
+        }
+      );
     },
-    [attemptId, secondsLeft, state, toast]
+    [attemptId, secondsLeft, attemptData, submitMutation, toast]
   );
 
   // ---- Stable refs so effects don’t depend on onSubmit ----
@@ -230,7 +255,7 @@ export default function AttemptRunner() {
   useFocusEffect(
     useCallback(() => {
       const unsubNav = navigation.addListener("beforeRemove", (e: any) => {
-        if (submitting) return;
+        if (submitMutation.isPending) return;
         e.preventDefault();
         Alert.alert(
           "Leave quiz?",
@@ -244,7 +269,7 @@ export default function AttemptRunner() {
       });
 
       const onHardwareBack = () => {
-        if (submitting) return true;
+        if (submitMutation.isPending) return true;
         Alert.alert(
           "Leave quiz?",
           "Your timer will keep running in the background.",
@@ -262,77 +287,79 @@ export default function AttemptRunner() {
         unsubNav();
         hwSub.remove();
       };
-    }, [navigation, submitting]) // <- no onSubmit here
+    }, [navigation, submitMutation.isPending])
   );
 
-  // ---- Load attempt once per attemptId (no onSubmit dep) ----
+  // Initialize selected answers and timer when data loads
   useEffect(() => {
-    let cancelled = false;
+    if (!attemptData) return;
 
-    (async () => {
-      try {
-        const d = await getAttempt(attemptId!);
-        if (cancelled) return;
+    console.log(`🔄 Loading attempt: ${attemptId}, questions: ${attemptData.questions.length}`);
 
-        const selected: Record<string, string | null> = {};
-        d.questions.forEach((q) => (selected[q.questionId] = q.selected_option_id));
+    const selectedAnswers: Record<string, string | null> = {};
+    attemptData.questions.forEach((q) => {
+      selectedAnswers[q.questionId] = q.selected_option_id;
+    });
+    setSelected(selectedAnswers);
 
-        setState({
-          questions: d.questions.map((q) => ({ questionId: q.questionId, stem: q.stem, options: q.options })),
-          selected,
-          durationSec: d.duration_sec,
-          startedAt: d.started_at,
-        });
+    // CRITICAL FIX: Always reset to question 1 when new attempt loads
+    setIndex(0);
+    console.log(`📍 Reset question index to 0 for attempt ${attemptId}`);
 
-        const remain = d.remaining_sec;
-        setSecondsLeft(remain);
+    const remain = attemptData.remaining_sec;
+    setSecondsLeft(remain);
 
-        if (remain <= 0) {
-          // use the ref so we don't depend on onSubmit
+    if (remain <= 0) {
+      onSubmitRef.current(true, 0);
+      return;
+    }
+
+    // Start timer
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          clearInterval(timerRef.current!);
           onSubmitRef.current(true, 0);
-          return;
+          return 0;
         }
-
-        // start ticking
-        if (timerRef.current) clearInterval(timerRef.current);
-        timerRef.current = setInterval(() => {
-          setSecondsLeft((s) => {
-            if (s <= 1) {
-              clearInterval(timerRef.current!);
-              onSubmitRef.current(true, 0);
-              return 0;
-            }
-            return s - 1;
-          });
-        }, 1000);
-      } catch (e) {
-        console.error(e);
-        toast.show("Unable to load attempt", { type: "danger" });
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+        return s - 1;
+      });
+    }, 1000);
 
     return () => {
-      cancelled = true;
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [attemptId]); // <- ONLY attemptId
+  }, [attemptData, attemptId]); // Add attemptId dependency
 
-  const currentQ = useMemo(() => (state ? state.questions[index] : null), [state, index]);
+  const currentQ = useMemo(() => 
+    attemptData ? attemptData.questions[index] : null, 
+    [attemptData, index]
+  );
 
-  async function onChoose(optionId: string) {
-    if (!state || !currentQ) return;
-    try {
-      // optimistic update
-      setState((prev) => (prev ? { ...prev, selected: { ...prev.selected, [currentQ.questionId]: optionId } } : prev));
-      await answerQuestion(attemptId!, currentQ.questionId, optionId);
-    } catch {
-      toast.show("Failed to save answer", { type: "danger" });
-    }
+  function onChoose(optionId: string) {
+    if (!attemptData || !currentQ) return;
+    
+    // Optimistic update
+    setSelected(prev => ({ ...prev, [currentQ.questionId]: optionId }));
+    
+    // Save to backend
+    answerMutation.mutate(
+      { attemptId: attemptId!, questionId: currentQ.questionId, optionId },
+      {
+        onError: () => {
+          // Revert on error
+          setSelected(prev => ({ 
+            ...prev, 
+            [currentQ.questionId]: attemptData.questions[index].selected_option_id 
+          }));
+          toast.show("Failed to save answer", { type: "danger" });
+        },
+      }
+    );
   }
 
-  if (loading || !state) return <ActivityIndicator style={{ marginTop: 32 }} />;
+  if (isLoading || !attemptData) return <ActivityIndicator style={{ marginTop: 32 }} />;
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 16 }}>
@@ -344,10 +371,10 @@ export default function AttemptRunner() {
       {currentQ && (
         <QuestionCard
           index={index}
-          total={state.questions.length}
+          total={attemptData.questions.length}
           stem={currentQ.stem}
           options={currentQ.options}
-          selectedOptionId={state.selected[currentQ.questionId] ?? null}
+          selectedOptionId={selected[currentQ.questionId] ?? null}
           onSelect={onChoose}
         />
       )}
@@ -369,15 +396,14 @@ export default function AttemptRunner() {
           <Text style={{ color: index === 0 ? "#94A3B8" : colors.text, fontWeight: "700" }}>Previous</Text>
         </TouchableOpacity>
 
-        {index < state.questions.length - 1 ? (
+        {index < attemptData.questions.length - 1 ? (
           <TouchableOpacity
-            disabled={!state.selected[currentQ!.questionId]}
             onPress={() => setIndex((i) => i + 1)}
             style={{
               flex: 1,
               paddingVertical: 12,
               borderRadius: 10,
-              backgroundColor: state.selected[currentQ!.questionId] ? colors.primary : "#94A3B8",
+              backgroundColor: colors.primary,
               alignItems: "center",
             }}
           >
@@ -387,9 +413,11 @@ export default function AttemptRunner() {
           <TouchableOpacity
             onPress={() => onSubmitRef.current(false)}
             style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center" }}
-            disabled={submitting}
+            disabled={submitMutation.isPending}
           >
-            <Text style={{ color: "#fff", fontWeight: "800" }}>{submitting ? "Submitting..." : "Submit"}</Text>
+            <Text style={{ color: "#fff", fontWeight: "800" }}>
+              {submitMutation.isPending ? "Submitting..." : "Submit"}
+            </Text>
           </TouchableOpacity>
         )}
       </View>

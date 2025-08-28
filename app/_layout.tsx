@@ -6,18 +6,21 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "react-native-toast-notifications";
 import { AuthProvider } from "../src/hooks/useAuth";
+import { QueryProvider } from "../src/providers/QueryProvider";
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <SafeAreaProvider>
-          <ToastProvider placement="top" duration={2000}>
-            <StatusBar style="light" />
-            <Slot />
-          </ToastProvider>
-        </SafeAreaProvider>
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <SafeAreaProvider>
+            <ToastProvider placement="top" duration={2000}>
+              <StatusBar style="light" />
+              <Slot />
+            </ToastProvider>
+          </SafeAreaProvider>
+        </AuthProvider>
+      </QueryProvider>
     </GestureHandlerRootView>
   );
 }

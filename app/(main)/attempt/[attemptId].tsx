@@ -196,6 +196,8 @@ export default function AttemptRunner() {
   const [index, setIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [selected, setSelected] = useState<Record<string, string | null>>({});
+  const [timeUpHandled, setTimeUpHandled] = useState(false); // Prevent multiple submissions
+  const [isTimeUp, setIsTimeUp] = useState(false); // Disable interactions when time is up
 
   const timerRef = useRef<number | null>(null);
 
@@ -204,6 +206,8 @@ export default function AttemptRunner() {
     console.log(`🎯 AttemptRunner mounted with attemptId: ${attemptId}`);
     setIndex(0); // Always start from first question
     setSelected({}); // Clear previous selections
+    setTimeUpHandled(false); // Reset time up flag
+    setIsTimeUp(false); // Reset time up UI state
   }, [attemptId]);
 
   // React Query hooks - force refetch for fresh attempts
@@ -229,10 +233,21 @@ export default function AttemptRunner() {
         { attemptId: attemptId!, timeTakenSec: spent > 0 ? spent : 0 },
         {
           onSuccess: (res) => {
-            if (auto) toast.show("Time up! Auto-submitted.", { type: "warning" });
-            else toast.show("Submitted!", { type: "success" });
+            // Clear timer immediately on successful submission
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            
+            if (auto) {
+              // For time-up submissions, show success message
+              toast.show("Quiz submitted successfully!", { type: "success" });
+            } else {
+              toast.show("Submitted!", { type: "success" });
+            }
+            
             router.replace({ 
-              pathname: "../attempt/[attemptId]/review", 
+              pathname: "/(main)/attempt/[attemptId]/review", 
               params: { attemptId: res.attemptId } 
             });
           },
@@ -242,7 +257,7 @@ export default function AttemptRunner() {
         }
       );
     },
-    [attemptId, secondsLeft, attemptData, submitMutation, toast]
+    [attemptId, secondsLeft, attemptData, submitMutation, toast, router]
   );
 
   // ---- Stable refs so effects don’t depend on onSubmit ----
@@ -309,8 +324,21 @@ export default function AttemptRunner() {
     const remain = attemptData.remaining_sec;
     setSecondsLeft(remain);
 
-    if (remain <= 0) {
-      onSubmitRef.current(true, 0);
+    if (remain <= 0 && !timeUpHandled) {
+      setTimeUpHandled(true);
+      setIsTimeUp(true); // Disable all interactions
+      // Show alert instead of immediate auto-submit
+      Alert.alert(
+        "⏰ Time's Up!",
+        "Your quiz time has expired. Your answers will be submitted automatically.",
+        [
+          {
+            text: "Submit Now",
+            onPress: () => onSubmitRef.current(true, 0),
+          },
+        ],
+        { cancelable: false }
+      );
       return;
     }
 
@@ -318,10 +346,31 @@ export default function AttemptRunner() {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setSecondsLeft((s) => {
-        if (s <= 1) {
+        if (s <= 1 && !timeUpHandled) {
           clearInterval(timerRef.current!);
-          onSubmitRef.current(true, 0);
+          setTimeUpHandled(true);
+          setIsTimeUp(true); // Disable all interactions
+          // Show alert instead of immediate toast loop
+          Alert.alert(
+            "⏰ Time's Up!",
+            "Your quiz time has expired. Your answers will be submitted automatically.",
+            [
+              {
+                text: "Submit Now",
+                onPress: () => onSubmitRef.current(true, 0),
+              },
+            ],
+            { cancelable: false }
+          );
           return 0;
+        }
+        // Show warning when 5 minutes (300 seconds) left
+        if (s === 300) {
+          toast.show("⚠️ 5 minutes remaining!", { type: "warning" });
+        }
+        // Show urgent warning when 1 minute (60 seconds) left  
+        if (s === 60) {
+          toast.show("🚨 1 minute remaining!", { type: "danger" });
         }
         return s - 1;
       });
@@ -330,7 +379,27 @@ export default function AttemptRunner() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [attemptData, attemptId]); // Add attemptId dependency
+  }, [attemptData, attemptId, timeUpHandled]); // Add timeUpHandled dependency
+
+  // Manual submission with confirmation
+  const handleManualSubmit = useCallback(() => {
+    Alert.alert(
+      "Submit Test",
+      "Are you sure you want to submit the test? You won't be able to change your answers after submission.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Submit",
+          style: "destructive",
+          onPress: () => onSubmitRef.current(false),
+        },
+      ],
+      { cancelable: true }
+    );
+  }, []);
 
   const currentQ = useMemo(() => 
     attemptData ? attemptData.questions[index] : null, 
@@ -338,7 +407,7 @@ export default function AttemptRunner() {
   );
 
   function onChoose(optionId: string) {
-    if (!attemptData || !currentQ) return;
+    if (!attemptData || !currentQ || isTimeUp) return; // Block interaction if time is up
     
     // Optimistic update
     setSelected(prev => ({ ...prev, [currentQ.questionId]: optionId }));
@@ -376,34 +445,36 @@ export default function AttemptRunner() {
           options={currentQ.options}
           selectedOptionId={selected[currentQ.questionId] ?? null}
           onSelect={onChoose}
+          disabled={isTimeUp} // Disable when time is up
         />
       )}
 
       <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
         <TouchableOpacity
-          disabled={index === 0}
+          disabled={index === 0 || isTimeUp}
           onPress={() => setIndex((i) => Math.max(0, i - 1))}
           style={{
             flex: 1,
             paddingVertical: 12,
             borderRadius: 10,
-            backgroundColor: index === 0 ? "#E2E8F0" : "#F8FAFC",
+            backgroundColor: (index === 0 || isTimeUp) ? "#E2E8F0" : "#F8FAFC",
             borderWidth: 1,
             borderColor: "#CBD5E1",
             alignItems: "center",
           }}
         >
-          <Text style={{ color: index === 0 ? "#94A3B8" : colors.text, fontWeight: "700" }}>Previous</Text>
+          <Text style={{ color: (index === 0 || isTimeUp) ? "#94A3B8" : colors.text, fontWeight: "700" }}>Previous</Text>
         </TouchableOpacity>
 
         {index < attemptData.questions.length - 1 ? (
           <TouchableOpacity
+            disabled={isTimeUp}
             onPress={() => setIndex((i) => i + 1)}
             style={{
               flex: 1,
               paddingVertical: 12,
               borderRadius: 10,
-              backgroundColor: colors.primary,
+              backgroundColor: isTimeUp ? "#94A3B8" : colors.primary,
               alignItems: "center",
             }}
           >
@@ -411,12 +482,18 @@ export default function AttemptRunner() {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            onPress={() => onSubmitRef.current(false)}
-            style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: colors.primary, alignItems: "center" }}
-            disabled={submitMutation.isPending}
+            onPress={handleManualSubmit}
+            style={{ 
+              flex: 1, 
+              paddingVertical: 12, 
+              borderRadius: 10, 
+              backgroundColor: (submitMutation.isPending || isTimeUp) ? "#94A3B8" : colors.primary, 
+              alignItems: "center" 
+            }}
+            disabled={submitMutation.isPending || isTimeUp}
           >
             <Text style={{ color: "#fff", fontWeight: "800" }}>
-              {submitMutation.isPending ? "Submitting..." : "Submit"}
+              {submitMutation.isPending ? "Submitting..." : isTimeUp ? "Time's Up" : "Submit"}
             </Text>
           </TouchableOpacity>
         )}

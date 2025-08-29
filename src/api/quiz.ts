@@ -57,7 +57,7 @@
 
 import api from "./client";
 
-export type Test = { testId: string; title: string; duration_sec: number };
+export type Test = { testId: string; title: string; duration_sec: number; category?: string; date?: string };
 export type TestDetail = { testId: string; title: string; duration_sec: number; question_count: number };
 
 export type Option = { optionId: string; text: string };

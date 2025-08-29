@@ -55,9 +55,10 @@ type Props = {
   options: Option[]; // { optionId, text }
   selectedOptionId?: string | null;
   onSelect: (optionId: string) => void;
+  disabled?: boolean; // Disable all interactions
 };
 
-export default function QuestionCard({ index, total, stem, options, selectedOptionId, onSelect }: Props) {
+export default function QuestionCard({ index, total, stem, options, selectedOptionId, onSelect, disabled = false }: Props) {
   return (
     <View style={{ gap: 12 }}>
       <Text style={{ color: colors.muted, fontWeight: "600" }}>
@@ -71,18 +72,26 @@ export default function QuestionCard({ index, total, stem, options, selectedOpti
           return (
             <TouchableOpacity
               key={opt.optionId}
-              onPress={() => onSelect(opt.optionId)}
+              onPress={() => !disabled && onSelect(opt.optionId)}
+              disabled={disabled}
               style={{
                 paddingVertical: 12,
                 paddingHorizontal: 14,
                 borderRadius: 12,
                 borderWidth: 2,
-                borderColor: active ? colors.primary : "#E2E8F0",
-                backgroundColor: active ? "#EEF2FF" : "#FFFFFF",
+                borderColor: disabled ? "#CBD5E1" : (active ? colors.primary : "#E2E8F0"),
+                backgroundColor: disabled ? "#F1F5F9" : (active ? "#EEF2FF" : "#FFFFFF"),
+                opacity: disabled ? 0.6 : 1,
               }}
-              activeOpacity={0.8}
+              activeOpacity={disabled ? 1 : 0.8}
             >
-              <Text style={{ color: colors.text, fontSize: 15, fontWeight: "600" }}>{opt.text}</Text>
+              <Text style={{ 
+                color: disabled ? "#94A3B8" : colors.text, 
+                fontSize: 15, 
+                fontWeight: "600" 
+              }}>
+                {opt.text}
+              </Text>
             </TouchableOpacity>
           );
         })}

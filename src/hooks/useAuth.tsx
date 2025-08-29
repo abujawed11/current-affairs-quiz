@@ -136,6 +136,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import * as AuthApi from "../api/auth";
 
 type User = { userId: string; username: string; email: string };
@@ -155,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     (async () => {
@@ -167,6 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (username: string, password: string) => {
+    // Clear all cached data before new user login
+    queryClient.clear();
+    
     const res = await AuthApi.loginWithUsername(username, password);
     await AsyncStorage.setItem("auth_token", res.token);
     await AsyncStorage.setItem("auth_user", JSON.stringify(res.user));
@@ -175,6 +180,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (username: string, email: string, password: string) => {
+    // Clear all cached data for new user registration
+    queryClient.clear();
+    
     const res = await AuthApi.signup(username, email, password);
     await AsyncStorage.setItem("auth_token", res.token);
     await AsyncStorage.setItem("auth_user", JSON.stringify(res.user));
@@ -183,6 +191,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear all cached data on logout
+    queryClient.clear();
+    
     await AsyncStorage.multiRemove(["auth_token", "auth_user"]);
     setToken(null);
     setUser(null);

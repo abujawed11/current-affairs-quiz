@@ -1,8 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, useFocusEffect } from "expo-router";
 import { colors } from "../../_layout.theme";
+import { Alert, BackHandler } from "react-native";
 
 export default function TabsLayout() {
+
+
+  useFocusEffect(() => {
+    const onBackPress = () => {
+      Alert.alert(
+        "Exit App",
+        "Are you sure you want to exit?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", onPress: () => BackHandler.exitApp() },
+        ],
+        { cancelable: true }
+      );
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => subscription.remove();
+  });
+
   return (
     <Tabs
       screenOptions={{

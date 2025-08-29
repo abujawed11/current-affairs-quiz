@@ -260,23 +260,23 @@ export default function Quizzes() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  useFocusEffect(() => {
-    const onBackPress = () => {
-      Alert.alert(
-        "Exit App",
-        "Are you sure you want to exit?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Exit", onPress: () => BackHandler.exitApp() },
-        ],
-        { cancelable: true }
-      );
-      return true;
-    };
+  // useFocusEffect(() => {
+  //   const onBackPress = () => {
+  //     Alert.alert(
+  //       "Exit App",
+  //       "Are you sure you want to exit?",
+  //       [
+  //         { text: "Cancel", style: "cancel" },
+  //         { text: "Exit", onPress: () => BackHandler.exitApp() },
+  //       ],
+  //       { cancelable: true }
+  //     );
+  //     return true;
+  //   };
 
-    const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
-    return () => subscription.remove();
-  });
+  //   const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+  //   return () => subscription.remove();
+  // });
 
   const load = useCallback(async () => {
     try {

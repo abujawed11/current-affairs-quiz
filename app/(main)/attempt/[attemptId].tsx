@@ -176,10 +176,21 @@ import QuestionCard from "@/src/components/QuestionCard";
 import { formatMMSS } from "@/src/utils/time";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, BackHandler, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, BackHandler, Text, TouchableOpacity, View, AppState } from "react-native";
 import { useToast } from "react-native-toast-notifications";
 import { colors } from "../../_layout.theme";
 import { useAttempt, useSubmitAttempt, useAnswerQuestion } from "@/src/hooks/useQueries";
+
+// Global state to track if user is currently in ANY test
+let globalActiveAttemptId: string | null = null;
+
+function setGlobalActiveAttempt(attemptId: string | null) {
+  globalActiveAttemptId = attemptId;
+}
+
+function isAnotherTestActive(currentAttemptId: string): boolean {
+  return globalActiveAttemptId !== null && globalActiveAttemptId !== currentAttemptId;
+}
 
 type AttemptState = {
   questions: { questionId: string; stem: string; options: { optionId: string; text: string }[] }[];
@@ -192,6 +203,7 @@ export default function AttemptRunner() {
   const { attemptId } = useLocalSearchParams<{ attemptId: string }>();
   const navigation = useNavigation();
   const toast = useToast();
+  const [isFocused, setIsFocused] = useState(true);
 
   const [index, setIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -208,6 +220,16 @@ export default function AttemptRunner() {
     setSelected({}); // Clear previous selections
     setTimeUpHandled(false); // Reset time up flag
     setIsTimeUp(false); // Reset time up UI state
+    
+    // Register this attempt as the active one
+    setGlobalActiveAttempt(attemptId!);
+    
+    // Cleanup when component unmounts
+    return () => {
+      if (globalActiveAttemptId === attemptId) {
+        setGlobalActiveAttempt(null);
+      }
+    };
   }, [attemptId]);
 
   // React Query hooks - force refetch for fresh attempts
@@ -239,17 +261,27 @@ export default function AttemptRunner() {
               timerRef.current = null;
             }
             
+            // Clear global active attempt when this test is submitted
+            if (globalActiveAttemptId === attemptId) {
+              setGlobalActiveAttempt(null);
+            }
+            
             if (auto) {
-              // For time-up submissions, show success message
-              toast.show("Quiz submitted successfully!", { type: "success" });
+              // For time-up submissions, only show message if focused
+              if (isFocused) {
+                toast.show("Quiz submitted successfully!", { type: "success" });
+              }
             } else {
               toast.show("Submitted!", { type: "success" });
             }
             
-            router.replace({ 
-              pathname: "/(main)/attempt/[attemptId]/review", 
-              params: { attemptId: res.attemptId } 
-            });
+            // Only navigate if this test is focused
+            if (isFocused) {
+              router.replace({ 
+                pathname: "/(main)/attempt/[attemptId]/review", 
+                params: { attemptId: res.attemptId } 
+              });
+            }
           },
           onError: () => {
             toast.show("Submit failed", { type: "danger" });
@@ -269,6 +301,9 @@ export default function AttemptRunner() {
   // ---- Back intercept (focus-bound) without re-registering every tick ----
   useFocusEffect(
     useCallback(() => {
+      setIsFocused(true);
+      setGlobalActiveAttempt(attemptId!);
+      
       const unsubNav = navigation.addListener("beforeRemove", (e: any) => {
         if (submitMutation.isPending) return;
         e.preventDefault();
@@ -277,7 +312,11 @@ export default function AttemptRunner() {
           "Your timer will keep running in the background.",
           [
             { text: "Keep going", style: "cancel" },
-            { text: "Save & exit", onPress: () => navigation.dispatch(e.data.action) },
+            { text: "Save & exit", onPress: () => {
+              setIsFocused(false);
+              // Don't clear global active attempt - timer still running
+              navigation.dispatch(e.data.action);
+            }},
             { text: "Submit now", style: "destructive", onPress: () => onSubmitRef.current(false) },
           ]
         );
@@ -299,10 +338,11 @@ export default function AttemptRunner() {
       const hwSub = BackHandler.addEventListener("hardwareBackPress", onHardwareBack);
 
       return () => {
+        setIsFocused(false);
         unsubNav();
         hwSub.remove();
       };
-    }, [navigation, submitMutation.isPending])
+    }, [navigation, submitMutation.isPending, attemptId])
   );
 
   // Initialize selected answers and timer when data loads
@@ -327,18 +367,25 @@ export default function AttemptRunner() {
     if (remain <= 0 && !timeUpHandled) {
       setTimeUpHandled(true);
       setIsTimeUp(true); // Disable all interactions
-      // Show alert instead of immediate auto-submit
-      Alert.alert(
-        "⏰ Time's Up!",
-        "Your quiz time has expired. Your answers will be submitted automatically.",
-        [
-          {
-            text: "Submit Now",
-            onPress: () => onSubmitRef.current(true, 0),
-          },
-        ],
-        { cancelable: false }
-      );
+      
+      // 🛡️ CRITICAL FIX: Only show popup if this is the focused test
+      if (isFocused && !isAnotherTestActive(attemptId!)) {
+        Alert.alert(
+          "⏰ Time's Up!",
+          "Your quiz time has expired. Your answers will be submitted automatically.",
+          [
+            {
+              text: "Submit Now",
+              onPress: () => onSubmitRef.current(true, 0),
+            },
+          ],
+          { cancelable: false }
+        );
+      } else {
+        // Silent auto-submit for background tests
+        console.log(`🔕 Background test ${attemptId} timed out - auto-submitting silently`);
+        onSubmitRef.current(true, 0);
+      }
       return;
     }
 
@@ -350,18 +397,25 @@ export default function AttemptRunner() {
           clearInterval(timerRef.current!);
           setTimeUpHandled(true);
           setIsTimeUp(true); // Disable all interactions
-          // Show alert instead of immediate toast loop
-          Alert.alert(
-            "⏰ Time's Up!",
-            "Your quiz time has expired. Your answers will be submitted automatically.",
-            [
-              {
-                text: "Submit Now",
-                onPress: () => onSubmitRef.current(true, 0),
-              },
-            ],
-            { cancelable: false }
-          );
+          
+          // 🛡️ CRITICAL FIX: Only show popup if this is the focused test
+          if (isFocused && !isAnotherTestActive(attemptId!)) {
+            Alert.alert(
+              "⏰ Time's Up!",
+              "Your quiz time has expired. Your answers will be submitted automatically.",
+              [
+                {
+                  text: "Submit Now",
+                  onPress: () => onSubmitRef.current(true, 0),
+                },
+              ],
+              { cancelable: false }
+            );
+          } else {
+            // Silent auto-submit for background tests  
+            console.log(`🔕 Background test ${attemptId} timed out - auto-submitting silently`);
+            onSubmitRef.current(true, 0);
+          }
           return 0;
         }
         // Show warning when 5 minutes (300 seconds) left

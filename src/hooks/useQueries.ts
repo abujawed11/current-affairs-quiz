@@ -1,30 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as AuthApi from '../api/auth';
 import * as QuizApi from '../api/quiz';
+import { useAuthProvider } from './useAuth';
 
-// Query Keys
+// User-specific Query Keys
 export const queryKeys = {
-  myAttempts: ['myAttempts'] as const,
-  inProgress: ['inProgress'] as const,
-  tests: ['tests'] as const,
+  myAttempts: (userId?: string) => ['myAttempts', userId] as const,
+  inProgress: (userId?: string) => ['inProgress', userId] as const,
+  tests: ['tests'] as const, // Tests are global, not user-specific
   testDetail: (id: string) => ['testDetail', id] as const,
-  testAttempts: (testId: string) => ['testAttempts', testId] as const,
+  testAttempts: (testId: string, userId?: string) => ['testAttempts', testId, userId] as const,
   attemptReview: (attemptId: string) => ['attemptReview', attemptId] as const,
   attempt: (attemptId: string) => ['attempt', attemptId] as const,
 };
 
 // Dashboard Queries
 export function useMyAttempts() {
+  const { user } = useAuthProvider();
+  
   return useQuery({
-    queryKey: queryKeys.myAttempts,
+    queryKey: queryKeys.myAttempts(user?.userId),
     queryFn: AuthApi.myAttempts,
+    enabled: !!user, // Only run when user is authenticated
   });
 }
 
 export function useInProgress() {
+  const { user } = useAuthProvider();
+  
   return useQuery({
-    queryKey: queryKeys.inProgress,
+    queryKey: queryKeys.inProgress(user?.userId),
     queryFn: AuthApi.inProgress,
+    enabled: !!user, // Only run when user is authenticated
   });
 }
 
@@ -45,10 +52,12 @@ export function useTestDetail(testId: string) {
 }
 
 export function useTestAttempts(testId: string) {
+  const { user } = useAuthProvider();
+  
   return useQuery({
-    queryKey: queryKeys.testAttempts(testId),
+    queryKey: queryKeys.testAttempts(testId, user?.userId),
     queryFn: () => QuizApi.getTestAttempts(testId),
-    enabled: !!testId,
+    enabled: !!testId && !!user,
   });
 }
 

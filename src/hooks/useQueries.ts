@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as AuthApi from '../api/auth';
 import * as QuizApi from '../api/quiz';
 import { useAuthProvider } from './useAuth';
@@ -80,53 +80,104 @@ export function useAttempt(attemptId: string, options?: any) {
 }
 
 // Mutations
+// export function useStartAttempt() {
+//   const queryClient = useQueryClient();
+  
+//   return useMutation({
+//     mutationFn: ({ testId, forceNew = false }: { testId: string; forceNew?: boolean }) =>
+//       QuizApi.startAttempt(testId, forceNew),
+//     onSuccess: (data, variables) => {
+//       // If forceNew=true, we need to clear all cached attempt data
+//       if (variables.forceNew) {
+//         // Remove all attempt queries from cache
+//         queryClient.removeQueries({ 
+//           queryKey: ['attempt'],
+//           exact: false 
+//         });
+//         // Clear any cached attempt data
+//         queryClient.clear();
+//       }
+      
+//       // Invalidate in-progress query to show the new attempt
+//       queryClient.invalidateQueries({ queryKey: queryKeys.inProgress });
+//       // Invalidate test attempts for this test
+//       queryClient.invalidateQueries({ queryKey: queryKeys.testAttempts(variables.testId) });
+//     },
+//   });
+// }
+
+
 export function useStartAttempt() {
   const queryClient = useQueryClient();
-  
+  const { user } = useAuthProvider();
+
   return useMutation({
     mutationFn: ({ testId, forceNew = false }: { testId: string; forceNew?: boolean }) =>
       QuizApi.startAttempt(testId, forceNew),
     onSuccess: (data, variables) => {
-      // If forceNew=true, we need to clear all cached attempt data
       if (variables.forceNew) {
-        // Remove all attempt queries from cache
-        queryClient.removeQueries({ 
-          queryKey: ['attempt'],
-          exact: false 
-        });
-        // Clear any cached attempt data
-        queryClient.clear();
+        // Remove only attempt-related caches, not everything
+        queryClient.removeQueries({ queryKey: ['attempt'], exact: false });
       }
-      
-      // Invalidate in-progress query to show the new attempt
-      queryClient.invalidateQueries({ queryKey: queryKeys.inProgress });
-      // Invalidate test attempts for this test
-      queryClient.invalidateQueries({ queryKey: queryKeys.testAttempts(variables.testId) });
+
+      // Invalidate “in progress”
+      queryClient.invalidateQueries({ queryKey: queryKeys.inProgress(user?.userId) });
+
+      // Invalidate test-specific attempts (your key includes userId)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.testAttempts(variables.testId, user?.userId),
+      });
     },
   });
 }
 
+
+
+// export function useSubmitAttempt() {
+//   const queryClient = useQueryClient();
+  
+//   return useMutation({
+//     mutationFn: ({ attemptId, timeTakenSec }: { attemptId: string; timeTakenSec: number }) =>
+//       QuizApi.submitAttempt(attemptId, timeTakenSec),
+//     onSuccess: (data, variables) => {
+//       // Invalidate all related queries
+//       queryClient.invalidateQueries({ queryKey: queryKeys.myAttempts });
+//       queryClient.invalidateQueries({ queryKey: queryKeys.inProgress });
+//       // Invalidate all testAttempts queries since we don't know which test this belongs to
+//       queryClient.invalidateQueries({ 
+//         queryKey: ['testAttempts'],
+//         exact: false
+//       });
+      
+//       // Remove the specific attempt from cache since it's now completed
+//       queryClient.removeQueries({ queryKey: queryKeys.attempt(variables.attemptId) });
+//     },
+//   });
+// }
+
 export function useSubmitAttempt() {
   const queryClient = useQueryClient();
-  
+  const { user } = useAuthProvider();
+
   return useMutation({
     mutationFn: ({ attemptId, timeTakenSec }: { attemptId: string; timeTakenSec: number }) =>
       QuizApi.submitAttempt(attemptId, timeTakenSec),
     onSuccess: (data, variables) => {
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.myAttempts });
-      queryClient.invalidateQueries({ queryKey: queryKeys.inProgress });
-      // Invalidate all testAttempts queries since we don't know which test this belongs to
-      queryClient.invalidateQueries({ 
-        queryKey: ['testAttempts'],
-        exact: false
-      });
-      
-      // Remove the specific attempt from cache since it's now completed
+      // Use actual arrays, not the functions
+      queryClient.invalidateQueries({ queryKey: queryKeys.myAttempts(user?.userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inProgress(user?.userId) });
+
+      // This one is fine as a prefix match
+      queryClient.invalidateQueries({ queryKey: ['testAttempts'], exact: false });
+
+      // Remove the attempt detail cache
       queryClient.removeQueries({ queryKey: queryKeys.attempt(variables.attemptId) });
     },
   });
 }
+
+
+
 
 export function useAnswerQuestion() {
   return useMutation({

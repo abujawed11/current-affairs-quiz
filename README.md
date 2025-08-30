@@ -195,3 +195,74 @@ current-affairs-quiz
 └─ tsconfig.json
 
 ```
+```
+current-affairs-quiz
+├─ .env
+├─ app
+│  ├─ (auth)
+│  │  ├─ login.tsx
+│  │  └─ signup.tsx
+│  ├─ (main)
+│  │  ├─ (tabs)
+│  │  │  ├─ dashboard.tsx
+│  │  │  ├─ news.tsx
+│  │  │  ├─ quizzes.tsx
+│  │  │  └─ _layout.tsx
+│  │  ├─ attempt
+│  │  │  ├─ [attemptId]
+│  │  │  │  └─ review.tsx
+│  │  │  └─ [attemptId].tsx
+│  │  ├─ attempts
+│  │  │  └─ index.tsx
+│  │  ├─ index.tsx
+│  │  ├─ profile.tsx
+│  │  ├─ test
+│  │  │  ├─ [id]
+│  │  │  │  └─ history.tsx
+│  │  │  └─ [id].tsx
+│  │  └─ _layout.tsx
+│  ├─ index.tsx
+│  ├─ _layout.theme.ts
+│  └─ _layout.tsx
+├─ app.json
+├─ assets
+│  ├─ fonts
+│  │  └─ SpaceMono-Regular.ttf
+│  └─ images
+│     ├─ adaptive-icon.png
+│     ├─ favicon.png
+│     ├─ icon.png
+│     ├─ partial-react-logo.png
+│     ├─ react-logo.png
+│     ├─ react-logo@2x.png
+│     ├─ react-logo@3x.png
+│     └─ splash-icon.png
+├─ babel.config.js
+├─ eslint.config.js
+├─ global.css
+├─ metro.config.js
+├─ nativewind-env.d.ts
+├─ package-lock.json
+├─ package.json
+├─ README.md
+├─ setup-frontend-structure.ps1
+├─ src
+│  ├─ api
+│  │  ├─ auth.ts
+│  │  ├─ client.ts
+│  │  └─ quiz.ts
+│  ├─ components
+│  │  └─ QuestionCard.tsx
+│  ├─ hooks
+│  │  ├─ useAttempt.ts
+│  │  ├─ useAuth.tsx
+│  │  ├─ useDeviceId.ts
+│  │  └─ useQueries.ts
+│  ├─ providers
+│  │  └─ QueryProvider.tsx
+│  └─ utils
+│     └─ time.ts
+├─ tailwind.config.js
+└─ tsconfig.json
+
+```

@@ -65,10 +65,10 @@ export default function TestHistoryScreen() {
   };
 
   const { data: detailedAttempts = [], isLoading: analyticsLoading } = useQuery({
-    queryKey: ['detailedAnalytics', id],
+    queryKey: ['detailedAnalytics', id, attempts.length, attempts.map(a => a.attemptId).join(',')],
     queryFn: getDetailedAnalytics,
     enabled: attempts.length > 0,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 1000, // Reduce cache time to 1 second for faster updates
   });
 
   // Calculate comprehensive statistics

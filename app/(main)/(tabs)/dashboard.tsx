@@ -83,7 +83,7 @@
 //           <Text style={{ color: colors.text, fontWeight: "800" }}>{stats.recent.title}</Text>
 //           <Text style={{ color: colors.muted, marginTop: 4 }}>
 //             {stats.recent.score}/{stats.recent.total} • {stats.recent.accuracy_pct}% •{" "}
-//             {new Date(stats.recent.submitted_at).toLocaleString()}
+//             {formatIndianDateTime(stats.recent.submitted_at)}
 //           </Text>
 
 //           <TouchableOpacity
@@ -130,6 +130,7 @@ import { useMemo } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "../../_layout.theme";
 import { useMyAttempts, useInProgress, useTests } from "@/src/hooks/useQueries";
+import { formatIndianDateTime } from "@/src/utils/time";
 
 function pct(n: number) {
   if (Number.isNaN(n)) return 0;
@@ -185,7 +186,7 @@ export default function Dashboard() {
           </Text>
           <Text style={{ color: colors.text, fontWeight: "800" }}>{progress.title}</Text>
           <Text style={{ color: colors.muted, marginTop: 4 }}>
-            Started: {new Date(progress.started_at).toLocaleString()}
+            Started: {formatIndianDateTime(progress.started_at)}
           </Text>
 
           <TouchableOpacity
@@ -238,7 +239,7 @@ export default function Dashboard() {
           <Text style={{ color: colors.text, fontWeight: "800" }}>{stats.recent.title}</Text>
           <Text style={{ color: colors.muted, marginTop: 4 }}>
             {stats.recent.score}/{stats.recent.total} • {stats.recent.accuracy_pct}% •{" "}
-            {new Date(stats.recent.submitted_at).toLocaleString()}
+            {formatIndianDateTime(stats.recent.submitted_at)}
           </Text>
 
           <TouchableOpacity

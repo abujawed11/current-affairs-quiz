@@ -34,12 +34,12 @@ export default function News() {
   const [selectedCategory, setSelectedCategory] = useState("general");
   const [error, setError] = useState<string | null>(null);
 
-  console.log("[NEWS DEBUG] Component rendered, state:", {
-    itemsCount: items.length,
-    loading,
-    selectedCategory,
-    error
-  });
+  // //console.log("[NEWS DEBUG] Component rendered, state:", {
+  //   itemsCount: items.length,
+  //   loading,
+  //   selectedCategory,
+  //   error
+  // });
 
   // Check and update daily request count
   const checkRequestLimit = async (): Promise<boolean> => {
@@ -52,52 +52,52 @@ export default function News() {
       
       if (count >= DAILY_REQUEST_LIMIT) {
         setError("Daily news limit reached. Fresh news will be available tomorrow.");
-        console.log(`[NEWS] Daily limit reached: ${count}/${DAILY_REQUEST_LIMIT}`);
+        // //console.log(`[NEWS] Daily limit reached: ${count}/${DAILY_REQUEST_LIMIT}`);
         return false;
       }
       
       // Increment count
       await AsyncStorage.setItem(countKey, String(count + 1));
-      console.log(`[NEWS] Daily requests: ${count + 1}/${DAILY_REQUEST_LIMIT}`);
+      // //console.log(`[NEWS] Daily requests: ${count + 1}/${DAILY_REQUEST_LIMIT}`);
       return true;
     } catch (error) {
-      console.error("Request limit check failed:", error);
+      // console.error("Request limit check failed:", error);
       return true; // Allow request on error
     }
   };
 
   // Get cached news or fetch new
   const fetchNews = async (category: string) => {
-    console.log(`[NEWS DEBUG] fetchNews called for category: ${category}`);
+    // //console.log(`[NEWS DEBUG] fetchNews called for category: ${category}`);
     try {
       setLoading(true);
       setError(null);
-      console.log("[NEWS DEBUG] Loading started, error cleared");
+      //console.log("[NEWS DEBUG] Loading started, error cleared");
       
       // Check cache first
       const cacheKey = `news_cache_${category}`;
       const cacheStr = await AsyncStorage.getItem(cacheKey);
-      console.log(`[NEWS DEBUG] Cache check for ${cacheKey}:`, cacheStr ? "found" : "not found");
+      //console.log(`[NEWS DEBUG] Cache check for ${cacheKey}:`, cacheStr ? "found" : "not found");
       
       if (cacheStr) {
         const cache = JSON.parse(cacheStr);
         const now = Date.now();
-        console.log(`[NEWS DEBUG] Cached data parsed:`, {
-          articlesCount: cache.articles?.length || 0,
-          timestamp: cache.timestamp,
-          age: Math.floor((now - cache.timestamp) / 1000 / 60) + ' minutes',
-          cacheValid: now - cache.timestamp < CACHE_DURATION,
-          firstArticle: cache.articles?.[0]?.title
-        });
+        //console.log(`[NEWS DEBUG] Cached data parsed:`, {
+        //   articlesCount: cache.articles?.length || 0,
+        //   timestamp: cache.timestamp,
+        //   age: Math.floor((now - cache.timestamp) / 1000 / 60) + ' minutes',
+        //   cacheValid: now - cache.timestamp < CACHE_DURATION,
+        //   firstArticle: cache.articles?.[0]?.title
+        // });
         
         if (now - cache.timestamp < CACHE_DURATION) {
-          console.log(`[NEWS DEBUG] Cache valid, setting items:`, cache.articles?.length);
+          //console.log(`[NEWS DEBUG] Cache valid, setting items:`, cache.articles?.length);
           setItems(cache.articles || []);
-          console.log(`[NEWS DEBUG] setItems called with:`, cache.articles);
+          //console.log(`[NEWS DEBUG] setItems called with:`, cache.articles);
           setLoading(false);
           return;
         } else {
-          console.log(`[NEWS DEBUG] Cache expired, will fetch fresh data`);
+          //console.log(`[NEWS DEBUG] Cache expired, will fetch fresh data`);
         }
       }
       
@@ -122,38 +122,38 @@ export default function News() {
       }
       
       // Make API request
-      console.log(`[NEWS DEBUG] Making API request for ${category}`);
+      //console.log(`[NEWS DEBUG] Making API request for ${category}`);
       const response = await api.get(`/news?category=${category}&page_size=15`);
-      console.log(`[NEWS DEBUG] API response status:`, response.status);
-      console.log(`[NEWS DEBUG] API response data:`, response.data);
+      //console.log(`[NEWS DEBUG] API response status:`, response.status);
+      //console.log(`[NEWS DEBUG] API response data:`, response.data);
       
       const articles = response.data.articles || [];
-      console.log(`[NEWS DEBUG] Articles extracted:`, articles.length);
+      //console.log(`[NEWS DEBUG] Articles extracted:`, articles.length);
       
       // Cache the results
       await AsyncStorage.setItem(cacheKey, JSON.stringify({
         articles,
         timestamp: Date.now()
       }));
-      console.log(`[NEWS DEBUG] Results cached for ${category}`);
+      //console.log(`[NEWS DEBUG] Results cached for ${category}`);
       
       setItems(articles);
-      console.log(`[NEWS DEBUG] Items state updated with ${articles.length} articles`);
+      //console.log(`[NEWS DEBUG] Items state updated with ${articles.length} articles`);
     } catch (err) {
       console.error('[NEWS DEBUG] API Error:', err);
-      console.log('[NEWS DEBUG] Error details:', JSON.stringify(err, null, 2));
+      //console.log('[NEWS DEBUG] Error details:', JSON.stringify(err, null, 2));
       setError(err instanceof Error ? err.message : 'Failed to load news');
       
       // Try to use cached data on error
       const cacheKey = `news_cache_${category}`;
       const cacheStr = await AsyncStorage.getItem(cacheKey);
-      console.log(`[NEWS DEBUG] Fallback cache check:`, cacheStr ? "found" : "not found");
+      //console.log(`[NEWS DEBUG] Fallback cache check:`, cacheStr ? "found" : "not found");
       
       if (cacheStr) {
         const cache = JSON.parse(cacheStr);
         setItems(cache.articles);
         setError("Using cached data - API error");
-        console.log(`[NEWS DEBUG] Using cached fallback: ${cache.articles.length} articles`);
+        //console.log(`[NEWS DEBUG] Using cached fallback: ${cache.articles.length} articles`);
       } else {
         // Fallback to placeholder data
         const fallbackData = [
@@ -162,16 +162,16 @@ export default function News() {
           { title: "Parliament Latest Bills", source: "PRS", url: "https://prsindia.org/billtrack", published_at: new Date().toISOString() },
         ];
         setItems(fallbackData);
-        console.log(`[NEWS DEBUG] Using fallback placeholder data: ${fallbackData.length} articles`);
+        //console.log(`[NEWS DEBUG] Using fallback placeholder data: ${fallbackData.length} articles`);
       }
     } finally {
       setLoading(false);
-      console.log("[NEWS DEBUG] Loading finished, setLoading(false) called");
+      //console.log("[NEWS DEBUG] Loading finished, setLoading(false) called");
     }
   };
 
   useEffect(() => {
-    console.log(`[NEWS DEBUG] useEffect triggered for category: ${selectedCategory}`);
+    //console.log(`[NEWS DEBUG] useEffect triggered for category: ${selectedCategory}`);
     fetchNews(selectedCategory);
   }, [selectedCategory]);
 
@@ -188,7 +188,7 @@ export default function News() {
         const countKey = `news_requests_${today}`;
         await AsyncStorage.removeItem(countKey);
         
-        console.log('[NEWS DEBUG] Cache and request count cleared, fetching fresh data');
+        //console.log('[NEWS DEBUG] Cache and request count cleared, fetching fresh data');
         fetchNews(selectedCategory);
       } catch (error) {
         console.error('Failed to clear cache:', error);
@@ -199,6 +199,7 @@ export default function News() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', { 
+      timeZone: 'Asia/Kolkata',
       day: 'numeric', 
       month: 'short', 
       hour: '2-digit', 
@@ -206,12 +207,12 @@ export default function News() {
     });
   };
 
-  console.log("[NEWS DEBUG] About to render, final state check:", {
-    itemsLength: items.length,
-    loading,
-    error,
-    firstItem: items[0]?.title
-  });
+  //console.log("[NEWS DEBUG] About to render, final state check:", {
+  //   itemsLength: items.length,
+  //   loading,
+  //   error,
+  //   firstItem: items[0]?.title
+  // });
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
@@ -308,7 +309,7 @@ export default function News() {
                     height: 180, 
                     resizeMode: 'cover' 
                   }}
-                  onError={() => console.log('Image failed to load')}
+                  // onError={() => console.log('Image failed to load')}
                 />
               )}
               

@@ -230,7 +230,7 @@ function normalize(s?: string | null) {
 }
 
 function categoryMatches(catKey: string, testCategory?: string | null) {
-  console.log("catkey", catKey, "testCategory", testCategory);
+  // console.log("catkey", catKey, "testCategory", testCategory);
   if (catKey === "all") return true;
   const incoming = normalize(testCategory);
   if (!incoming) return false;
@@ -282,7 +282,7 @@ export default function Quizzes() {
     try {
       setError(null);
       const data = await fetchTests();
-      console.log("Test Data: ",data)
+      // console.log("Test Data: ",data)
       setTests(data);
     } catch (e: any) {
       setError(e?.message || "Failed to load tests");

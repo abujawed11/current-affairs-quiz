@@ -376,7 +376,7 @@ export default function AttemptRunner() {
           [
             {
               text: "Submit Now",
-              onPress: () => onSubmitRef.current(true, 0),
+              onPress: () => onSubmitRef.current(true, attemptData.duration_sec),
             },
           ],
           { cancelable: false }
@@ -384,7 +384,7 @@ export default function AttemptRunner() {
       } else {
         // Silent auto-submit for background tests
         console.log(`🔕 Background test ${attemptId} timed out - auto-submitting silently`);
-        onSubmitRef.current(true, 0);
+        onSubmitRef.current(true, attemptData.duration_sec);
       }
       return;
     }
@@ -406,7 +406,7 @@ export default function AttemptRunner() {
               [
                 {
                   text: "Submit Now",
-                  onPress: () => onSubmitRef.current(true, 0),
+                  onPress: () => onSubmitRef.current(true, attemptData.duration_sec),
                 },
               ],
               { cancelable: false }
@@ -414,7 +414,7 @@ export default function AttemptRunner() {
           } else {
             // Silent auto-submit for background tests  
             console.log(`🔕 Background test ${attemptId} timed out - auto-submitting silently`);
-            onSubmitRef.current(true, 0);
+            onSubmitRef.current(true, attemptData.duration_sec);
           }
           return 0;
         }

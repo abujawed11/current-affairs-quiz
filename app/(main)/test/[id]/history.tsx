@@ -4,6 +4,7 @@ import { colors } from "../../../_layout.theme";
 import { useTestAttempts, useTestDetail } from "@/src/hooks/useQueries";
 import { useQuery } from '@tanstack/react-query';
 import * as QuizApi from "@/src/api/quiz";
+import { formatIndianDate, formatIndianTime } from "@/src/utils/time";
 
 // Type definitions for enhanced analytics
 type BasicAttempt = {
@@ -379,8 +380,7 @@ export default function TestHistoryScreen() {
             </View>
 
             <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 12 }}>
-              {new Date(attempt.submitted_at).toLocaleDateString()} at{" "}
-              {new Date(attempt.submitted_at).toLocaleTimeString()}
+              {formatIndianDate(attempt.submitted_at)} at {formatIndianTime(attempt.submitted_at)}
             </Text>
 
             <TouchableOpacity

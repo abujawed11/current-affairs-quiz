@@ -22,11 +22,19 @@ export default function MainLayout() {
       />
       <Drawer.Screen
         name="attempt/[attemptId]"
-        options={{ drawerItemStyle: { display: "none" }, title: "Attempt" }}
+        options={{ drawerItemStyle: { display: "none" }, title: "Taking Test" }}
       />
       <Drawer.Screen
         name="attempt/[attemptId]/review"
         options={{ drawerItemStyle: { display: "none" }, title: "Review" }}
+      />
+      <Drawer.Screen
+        name="test/[id]/history"
+        options={{ drawerItemStyle: { display: "none" }, title: "Quiz Performance History" }}
+      />
+      <Drawer.Screen
+        name="(tabs)"
+        options={{ drawerItemStyle: { display: "none" }, title: "Home" }}
       />
     </Drawer>
   );

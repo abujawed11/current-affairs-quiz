@@ -22,5 +22,5 @@ export default function Index() {
   }
 
   // Not logged in → auth flow
-  return <Redirect href="/(auth)/login" />;
+  return <Redirect href="/login" />;
 }

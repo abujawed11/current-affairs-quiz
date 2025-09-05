@@ -5,7 +5,7 @@
 // import { useEffect, useMemo, useRef, useState } from "react";
 // import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 // import { useToast } from "react-native-toast-notifications";
-// import { colors } from "../../_layout.theme";
+// import { colors } from "@/src/utils/colors";
 
 // type AttemptState = {
 //   questions: {
@@ -178,7 +178,7 @@ import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "exp
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, BackHandler, Text, TouchableOpacity, View, AppState } from "react-native";
 import { useToast } from "react-native-toast-notifications";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { useAttempt, useSubmitAttempt, useAnswerQuestion } from "@/src/hooks/useQueries";
 
 // Global state to track if user is currently in ANY test

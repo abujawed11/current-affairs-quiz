@@ -1,4 +1,4 @@
-// app/index.tsx
+// // app/index.tsx
 import { Redirect } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { useAuthProvider } from "../src/hooks/useAuth";
@@ -24,3 +24,11 @@ export default function Index() {
   // Not logged in → auth flow
   return <Redirect href="/login" />;
 }
+
+// import { Redirect } from "expo-router";
+// // import { useAuth } from "@/src/hooks/useAuth"; // if you have it
+
+// export default function Index() {
+//   const isLoggedIn = false; // replace with your auth state
+//   return <Redirect href="../dashboard" />;
+// }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useToast } from "react-native-toast-notifications";
 import { useAuthProvider } from "../../src/hooks/useAuth";
-import { colors } from "../_layout.theme";
+import { colors } from "@/src/utils/colors";
 
 export default function Login() {
   const toast = useToast();

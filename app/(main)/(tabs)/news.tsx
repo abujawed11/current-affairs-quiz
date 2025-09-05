@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FlatList, Linking, Text, TouchableOpacity, View, ActivityIndicator, ScrollView, Image, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import api from "../../../src/api/client";
 
 type NewsItem = { 

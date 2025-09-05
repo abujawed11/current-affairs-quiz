@@ -3,7 +3,7 @@
 // import { router } from "expo-router";
 // import { useEffect, useMemo, useState } from "react";
 // import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
-// import { colors } from "../../_layout.theme";
+// import { colors } from "@/src/utils/colors";
 
 // type AttemptSummary = Awaited<ReturnType<typeof AuthApi.myAttempts>>[number];
 
@@ -128,7 +128,7 @@
 import { router } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { useMyAttempts, useInProgress, useTests } from "@/src/hooks/useQueries";
 import { formatIndianDateTime } from "@/src/utils/time";
 

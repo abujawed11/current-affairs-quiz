@@ -2,7 +2,7 @@
 // import { router, useLocalSearchParams } from "expo-router";
 // import { useEffect, useState } from "react";
 // import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
-// import { colors } from "../../../_layout.theme";
+// import { colors } from "@/src/utils/colors";
 
 // export default function ReviewScreen() {
 //   const { attemptId } = useLocalSearchParams<{ attemptId: string }>();
@@ -77,7 +77,7 @@
 
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { useAttemptReview } from "@/src/hooks/useQueries";
 
 export default function ReviewScreen() {

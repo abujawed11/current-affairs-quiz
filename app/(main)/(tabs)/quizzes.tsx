@@ -2,7 +2,7 @@
 // import { router, useFocusEffect } from "expo-router";
 // import { useCallback, useEffect, useState } from "react";
 // import { ActivityIndicator, Alert, BackHandler, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
-// import { colors } from "../../_layout.theme";
+// import { colors } from "@/src/utils/colors";
 
 // type TestRow = {
 //   testId: string;
@@ -192,7 +192,7 @@ import {
   View,
   Pressable,
 } from "react-native";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 
 type TestRow = {
   testId: string;

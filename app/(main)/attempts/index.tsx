@@ -2,7 +2,7 @@
 // import { useEffect, useState } from "react";
 // import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
 // import * as AuthApi from "../../../src/api/auth";
-// import { colors } from "../../_layout.theme";
+// import { colors } from "@/src/utils/colors";
 
 // type Row = { id: number; test_id: number; title: string; score: number; total: number; accuracy_pct: number; submitted_at: string };
 
@@ -49,7 +49,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { useMyAttempts } from "@/src/hooks/useQueries";
 import { formatIndianDateTime } from "@/src/utils/time";
 

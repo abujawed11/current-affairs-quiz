@@ -45,7 +45,7 @@
 
 
 import { Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../app/_layout.theme";
+import { colors } from "@/src/utils/colors";
 import type { Option } from "../api/quiz";
 
 type Props = {

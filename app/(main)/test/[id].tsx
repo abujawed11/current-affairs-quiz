@@ -3,7 +3,7 @@
 // import { useEffect, useState } from "react";
 // import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 // import { useToast } from "react-native-toast-notifications";
-// import { colors } from "../../_layout.theme";
+// import { colors } from "@/src/utils/colors";
 
 // export default function TestDetailScreen() {
 //   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,7 +73,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useToast } from "react-native-toast-notifications";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { useTestDetail, useTestAttempts, useStartAttempt, useInProgress } from "@/src/hooks/useQueries";
 
 export default function TestDetailScreen() {

@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useAuthProvider } from "../../src/hooks/useAuth";
-import { colors } from "../_layout.theme";
+import { colors } from "@/src/utils/colors";
 
 export default function Profile() {
   const { user, signOut } = useAuthProvider();
@@ -15,7 +15,7 @@ export default function Profile() {
       <TouchableOpacity
         onPress={async () => {
           await signOut();
-          router.replace("/(auth)/login");
+          router.replace("/login");
         }}
         style={{ backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 12, alignItems: "center", marginTop: 16 }}
       >

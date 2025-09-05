@@ -1,5 +1,5 @@
 import { Drawer } from "expo-router/drawer";
-import { colors } from "../_layout.theme";
+import { colors } from "@/src/utils/colors";
 
 export default function MainLayout() {
   return (

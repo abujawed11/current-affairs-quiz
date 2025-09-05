@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { colors } from "../../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { useTestAttempts, useTestDetail } from "@/src/hooks/useQueries";
 import { useQuery } from '@tanstack/react-query';
 import * as QuizApi from "@/src/api/quiz";

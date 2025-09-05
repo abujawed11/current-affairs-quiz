@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useFocusEffect } from "expo-router";
-import { colors } from "../../_layout.theme";
+import { colors } from "@/src/utils/colors";
 import { Alert, BackHandler } from "react-native";
 
 export default function TabsLayout() {

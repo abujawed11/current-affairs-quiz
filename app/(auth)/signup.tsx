@@ -37,7 +37,7 @@ export default function Signup() {
       setBusy(true);
       await signUp(username.trim(), email.trim(), password);
       toast.show("Signup successful! Please login.", { type: "success" });
-      router.replace("/(auth)/login");   // 👈 go to login screen
+      router.replace("/login");   // 👈 go to login screen
     } catch (e: any) {
       toast.show(e?.message || "Signup failed", { type: "danger" });
     } finally {
@@ -122,7 +122,7 @@ export default function Signup() {
       </TouchableOpacity>
 
       <Text style={{ color: colors.muted, marginTop: 8 }}>
-        Already have an account? <Link href="/(auth)/login">Sign in</Link>
+        Already have an account? <Link href="/login">Sign in</Link>
       </Text>
     </View>
   );

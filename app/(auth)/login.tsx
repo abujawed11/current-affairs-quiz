@@ -27,7 +27,7 @@ export default function Login() {
     try {
       setBusy(true);
       await signIn(username.trim(), password);
-      router.replace("/(main)");
+      router.replace("/dashboard");
     } catch (e: any) {
       toast.show(e?.message || "Login failed", { type: "danger" });
     } finally {
@@ -87,7 +87,7 @@ export default function Login() {
       </TouchableOpacity>
 
       <Text style={{ color: colors.muted, marginTop: 8 }}>
-        New here? <Link href="/(auth)/signup">Create an account</Link>
+        New here? <Link href="/signup">Create an account</Link>
       </Text>
     </View>
   );

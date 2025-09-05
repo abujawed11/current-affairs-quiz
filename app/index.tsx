@@ -18,7 +18,7 @@ export default function Index() {
   if (user) {
     // If you later add roles, branch here:
     // if (user.role === "admin") return <Redirect href="/(admin)" />;
-    return <Redirect href="/(main)" />;
+    return <Redirect href="/dashboard" />;
   }
 
   // Not logged in → auth flow

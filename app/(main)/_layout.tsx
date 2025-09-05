@@ -26,7 +26,6 @@ export default function MainLayout() {
           drawerItemStyle: { display: "none" }, 
           title: "Taking Test",
           swipeEnabled: false, // Disable swipe to open drawer
-          drawerLockMode: 'locked-closed', // Lock drawer closed
           headerLeft: () => null, // Hide hamburger icon
         }}
       />
